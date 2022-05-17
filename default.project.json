@@ -1,0 +1,12 @@
+{
+  "name": "iKs C-Replicator",
+  "tree": {
+    "$className": "DataModel",
+
+    "ServerStorage": {
+      "MainModule": {
+        "$path": "MainModule"
+      }
+    }
+  }
+}
