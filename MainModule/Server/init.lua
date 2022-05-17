@@ -16,11 +16,6 @@ local ChatCompiler = require(script.ChatCompiler)
 function Server.new(Host)
 	local self = {}
 	self.Host = Host
-	local bool, Roblox_Animations = pcall(require, 9655245780)
-	if not bool then
-		warn(Roblox_Animations, "\n Failed to fetch the roblox animations for the character(s). Animations wont be played")
-	end
-	self.Animations = Roblox_Animations
 	return setmetatable(self, Server)
 end
 
@@ -135,12 +130,6 @@ function Server:init()
 
 	local Path, StorageChar = fakePath(), Character()
 	local FlushChar = StorageChar:GetDescendants()
-	for i = 1, #FlushChar do
-		if FlushChar[i]:IsA("LuaSourceContainer") or FlushChar[i]:IsA("ForceField") then
-			FlushChar[i]:Destroy()
-		end
-	end
-
 	local Root = StorageChar:WaitForChild("HumanoidRootPart")
 	self.Root = Root
 	self.StandingRoot = self.Root.Position
