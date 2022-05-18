@@ -75,9 +75,9 @@ end
 local CurrentModel
 
 function Character:LoadCharacter(Standing)
-    local NetworkGate = require(script.NetworkGate)
-    local Actions = require(script.Actions)
+    local NetworkGate, Actions = require(script.NetworkGate), require(script.Actions)
     local Network = NetworkGate.new(Character.ReplicatorOBJ)
+
     Network.Remote.OnClientEvent:Connect(function(Action, ...)
         local Par_Act = Actions.Parallel[Action]
         if Par_Act then
@@ -100,7 +100,7 @@ function Character:LoadCharacter(Standing)
 
     local HostConnection = Players:FindFirstChild(self.__t.Target)
     if self.IsTheReplicator then
-        local Roblox_Patches = require(script.RobloxFunctions)
+        local Roblox_Patches, HostGate = require(script.RobloxFunctions), require(script.HostGate)
         local Patches = Roblox_Patches.new({
             Host = HostConnection,
             TeamSpawns = nil,
@@ -109,7 +109,6 @@ function Character:LoadCharacter(Standing)
             Humanoid = Humanoid
         })
         --Configure the host
-        local HostGate = require(script.HostGate)
         HostTracking = HostGate.newHost(Patches)
         HostTracking:StreamToServer()
         HumanoidRootPart.CFrame = Standing
@@ -120,7 +119,9 @@ function Character:LoadCharacter(Standing)
         self.Velocity.Velocity = Vector3.zero
         self.Velocity.Parent = HumanoidRootPart
     end
-    HostConnection.Character = CharacterModel
+    if HostConnection then
+        HostConnection.Character = CharacterModel
+    end
     CharacterModel.Parent = workspace
     Actions.init(self.Velocity, HumanoidRootPart, Humanoid, self.EmoteBind)
 end
