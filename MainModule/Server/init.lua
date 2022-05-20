@@ -13,14 +13,10 @@ local insert = table.insert
 local Chars = {}
 local ChatCompiler = require(script.ChatCompiler)
 
-function Server.new(Host)
+function Server.new(Host, UseR6)
 	local self = {}
 	self.Host = Host
-	local bool, Roblox_Animations = pcall(require, 9655245780)
-	if not bool then
-		warn(Roblox_Animations, "\n Failed to fetch the roblox animations for the character(s). Animations wont be played")
-	end
-	self.Animations = Roblox_Animations
+	self.UseR6 = UseR6
 	return setmetatable(self, Server)
 end
 
@@ -47,12 +43,6 @@ local function LoadClient(self, Client)
 			TargetID = self.Host.UserId,
 			Standing = self.StandingRoot
 		})
-		
-		if self.Animations then
-			local RBLX_Animations = self.Animations.script:Clone()
-			RBLX_Animations.Name = "Rigs"
-			RBLX_Animations.Parent = Package:WaitForChild("Character")
-		end
 		Package.Parent = WaitForChildOfClass(Client, "PlayerGui")
 
 		if Client.UserId == self.Host.UserId then
@@ -109,7 +99,27 @@ function Server:init()
 	    return rep("\n", rand(10, 100)) .. "\t"
 	end
 
-	local function Character()
+	local function Character(self)
+		if self.UseR6 then
+			local function GenerateHdescription()
+				local b, M = pcall(Players.CreateHumanoidModelFromUserId, Players, self.Host.UserId)
+			    if not b then
+			        warn(M)
+			    end
+			    return M
+			end
+			local Humanoid = HostCharacter:FindFirstChildOfClass("Humanoid")
+			if Humanoid and Humanoid.RigType ~= Enum.HumanoidRigType.R6 then
+				local Description = Humanoid:GetAppliedDescription() or GenerateHdescription()
+				local b, M = pcall(Players.CreateHumanoidModelFromDescription, Players, Description, Enum.HumanoidRigType.R6)
+			    if not b then
+			        warn(M)
+			    else
+			    	return M:Clone()
+			    end
+			    return nil
+			end
+		end
 		if not HostCharacter then
 			self.Host:LoadCharacter()
 			HostCharacter = self.Host.Character
@@ -133,7 +143,7 @@ function Server:init()
 	    return t and tc[rand(1, #tc)]
 	end
 
-	local Path, StorageChar = fakePath(), Character()
+	local Path, StorageChar = fakePath(), Character(self)
 	local FlushChar = StorageChar:GetDescendants()
 	for i = 1, #FlushChar do
 		if FlushChar[i]:IsA("LuaSourceContainer") or FlushChar[i]:IsA("ForceField") then

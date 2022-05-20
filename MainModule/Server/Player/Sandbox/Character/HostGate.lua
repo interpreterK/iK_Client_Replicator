@@ -42,15 +42,13 @@ function Tracker:StreamToServer()
     end
     --[[
     https://devforum.roblox.com/t/runservicenetworkstepped-event/12154
-    Please roblox any day now...
-
     https://devforum.roblox.com/t/release-notes-for-337/125038/16
-    lol roblox
     ]]
     Step_Connection = RS.Heartbeat:Connect(function()
         --Customize your options if needed
         self.PreConfiged_Patches:VoidRespawn()
-        self.PreConfiged_Patches:SitMechanics()
+        --Disabled for the sandboxed branch.
+        --self.PreConfiged_Patches:SitMechanics()
         --
         HostMove(self)
     end)

@@ -64,10 +64,8 @@ local function WaitForChildOfClass(Parent, Class)
     return c
 end
 
-function Character.new(Settings, AnimateRig, TeamSpawns)
+function Character.new(Settings)
     Character.__t = Settings
-    Character.AnimateRig = AnimateRig
-    Character.TeamSpawns = TeamSpawns
     Character.IsTheReplicator = Player.UserId == Settings.TargetID
     Character.ReplicatorOBJ = GetTargeted(Character)
     Character.Model = WaitForChildOfClass(Character.ReplicatorOBJ, "Model"):Clone()
@@ -75,47 +73,23 @@ function Character.new(Settings, AnimateRig, TeamSpawns)
 end
 
 local CurrentModel
-local function RigAnimations(self, Humanoid)
-    assert(Humanoid, "A humanoid is required to aniamte its rig")
-    if CurrentModel then
-        coroutine.wrap(function()
-            if Packages then
-                if not self.EmoteBind then
-                    self.EmoteBind = new("BindableFunction")
-                end
-                require(Packages[Humanoid.RigType.Name])(CurrentModel, self.EmoteBind)
-            end
-        end)()
-    else
-        warn("No model for rig animations")
-    end
-end
 
-function Character:LoadCharacter(Respawning, Standing)
-    if CurrentModel then
-        pcall(game.Destroy, CurrentModel)
-    end
-    local NetworkGate = require(script.NetworkGate)
-    local Actions = require(script.Actions)
-    if Respawning then
-        if self.IsTheReplicator then
-            NetworkGate:Out("Respawn")
-        end
-    else
-        local Network = NetworkGate.new(Character.ReplicatorOBJ)
-        Network.Remote.OnClientEvent:Connect(function(Action, ...)
-            local Par_Act = Actions.Parallel[Action]
-            if Par_Act then
-                Par_Act(...)
-            else
-                local Type = not self.IsTheReplicator and "Guest" or "Host"
-                local Act = Actions[Type][Action]
-                if Act then
-                    Act(...)
-                end
+function Character:LoadCharacter(Standing)
+    local NetworkGate, Actions = require(script.NetworkGate), require(script.Actions)
+    local Network = NetworkGate.new(Character.ReplicatorOBJ)
+
+    Network.Remote.OnClientEvent:Connect(function(Action, ...)
+        local Par_Act = Actions.Parallel[Action]
+        if Par_Act then
+            Par_Act(...)
+        else
+            local Type = not self.IsTheReplicator and "Guest" or "Host"
+            local Act = Actions[Type][Action]
+            if Act then
+                Act(...)
             end
-        end)
-    end
+        end
+    end)
 
     local CharacterModel = self.Model:Clone()
     local HumanoidRootPart = CharacterModel:WaitForChild("HumanoidRootPart")
@@ -126,50 +100,29 @@ function Character:LoadCharacter(Respawning, Standing)
 
     local HostConnection = Players:FindFirstChild(self.__t.Target)
     if self.IsTheReplicator then
-        --Some base roblox mechanics that get ignored for the client
-        local Roblox_Patches = require(script.RobloxFunctions)
+        local Roblox_Patches, HostGate = require(script.RobloxFunctions), require(script.HostGate)
         local Patches = Roblox_Patches.new({
             Host = HostConnection,
-            TeamSpawns = Use_Team_Spawns,
+            TeamSpawns = nil,
             Character = CharacterModel, 
             Root = HumanoidRootPart,
             Humanoid = Humanoid
         })
         --Configure the host
-        local HostGate = require(script.HostGate)
-        if not Respawning then
-            HostTracking = HostGate.newHost(Patches)
-            HostTracking:StreamToServer()
-        else
-            if HostGate.init and HostTracking then
-                HostTracking:ApplyNewRig(Patches)
-            else
-                --For some reason if the tracker didn't initialize before
-                HostTracking = HostGate.newHost(Patches)
-                HostTracking:StreamToServer()
-            end
-        end
-        if not Standing then
-            Standing = Patches:MapRespawn()
-        end
+        HostTracking = HostGate.newHost(Patches)
+        HostTracking:StreamToServer()
         HumanoidRootPart.CFrame = Standing
         workspace.CurrentCamera.CameraSubject = Humanoid
-        Humanoid.Died:Connect(function()
-            NetworkGate:Out("Health", 0)
-            wait(Players.RespawnTime)
-            self:LoadCharacter(true, Patches:MapRespawn())
-        end)
     else
         self.Velocity = Instance.new("BodyVelocity")
         self.Velocity.MaxForce = Vector3.one * math.huge
         self.Velocity.Velocity = Vector3.zero
         self.Velocity.Parent = HumanoidRootPart
     end
-    HostConnection.Character = CharacterModel
-    CharacterModel.Parent = workspace
-    if self.AnimateRig then
-        RigAnimations(self, Humanoid)
+    if HostConnection then
+        HostConnection.Character = CharacterModel
     end
+    CharacterModel.Parent = workspace
     Actions.init(self.Velocity, HumanoidRootPart, Humanoid, self.EmoteBind)
 end
 

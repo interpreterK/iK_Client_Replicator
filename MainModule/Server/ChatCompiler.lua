@@ -35,9 +35,7 @@ function ChatCompiler:CompileString(_string)
 	local a2 = s[2] and s[2]:lower()
 
 	if a1 == "/e" then
-		if a2 == "dance" then
-			self.Remote:FireAllClients("Emote", ({"dance1","dance2","dance3"})[rand(1, 3)])
-		elseif a2 == "s" then
+		if a2 == "s" then
 			if s[3] then
 				RunScript(self, s[3])
 			end
